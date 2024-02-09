@@ -1,0 +1,2 @@
+Release     Date        Description
+v2.0        2024-02-12  MobileNetv3 with test accuracy of 0.85
