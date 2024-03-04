@@ -7,9 +7,8 @@ import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
 # from tensorboardX import SummaryWriter
-from model_attMap import Generator, Discriminator 
-from loss import AdversarialLoss
-from data_5 import CsvDataset
+from model_attMap import Generator, Discriminator
+from dataloaders.data_5 import CsvDataset
 from torch.optim import lr_scheduler
 from utils import AverageMeter
 import torch.nn.functional as F

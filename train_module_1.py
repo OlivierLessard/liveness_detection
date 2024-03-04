@@ -1,19 +1,15 @@
 # from GPUtil import showUtilization as gpu_usage
 # gpu_usage()
 import argparse
-import datetime
 import os
-import time
 import torch
 import csv
 import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
 # from tensorboardX import SummaryWriter
-from torch.utils.tensorboard import SummaryWriter
-from model_EfficientNet import Discriminator
 from loss import ContrastiveLoss
-from data_7_EfficientNet import CsvDataset
+from dataloaders.data_7_EfficientNet import CsvDataset
 from torch.optim import lr_scheduler
 import torchvision.models as models
 from utils_EfficientNety import AverageMeter

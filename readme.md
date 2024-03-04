@@ -1,2 +1,2 @@
 dataset should be located here under the project folder
-![img.png](img.png)
+![img.png](other_files/img.png)

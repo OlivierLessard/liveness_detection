@@ -1,22 +1,13 @@
 import torch
 import statistics
-import torch.nn.functional as F
 import torchvision.transforms as transforms
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import DataLoader
 # from model import Generator as Model3D
 import argparse
-from data_7_EfficientNet import CsvDataset
-from model_EfficientNet import Discriminator 
-import matplotlib.pyplot as plt
-from PIL import Image
-import numpy as np
-import torchvision.models as models
+from dataloaders.data_7_EfficientNet import CsvDataset
 import seaborn as sn
-import csv
 import os.path
-import datetime
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
