@@ -29,9 +29,9 @@ def main():
     print("Run the script on Device: ", device)
 
 
-    from train_module_1 import get_mobilenet
+    from train_CNN import get_mobilenet
     mobilenet = get_mobilenet().to(device)
-    path = 'models/mobilenet_v2.ckpt'
+    path = 'trained_models/mobilenet_v2.ckpt'
 
     checkpoint = torch.load(path, map_location=device)
     model_loaded_state = {k.replace('module.', ''): v for k, v in checkpoint['model_state_dict'].items()}
@@ -81,7 +81,7 @@ def main():
     df_cm = pd.DataFrame(cf_matrix, index=[i for i in classes], columns=[i for i in classes])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True, fmt=".2g")
-    plt.savefig(os.path.join('./models', 'confusion_matrix_v2_final_test.png'))
+    plt.savefig(os.path.join('trained_models', 'confusion_matrix_v2_final_test.png'))
 
 
 

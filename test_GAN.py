@@ -2,7 +2,7 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 # from model_classify import Generator as Model3D
-from model_attMap import Generator, Discriminator
+from model.model_attMap import Generator, Discriminator
 import argparse
 from sklearn.metrics import confusion_matrix
 import os.path
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sn
 
-MODEL_DIR = './models/'
+MODEL_DIR = 'trained_models/'
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -33,7 +33,7 @@ def main():
     netG = Generator().to(device)
     netD = Discriminator().to(device)
     
-    path = 'models/sch1_attMap.ckpt'
+    path = 'trained_models/sch1_attMap.ckpt'
     checkpoint = torch.load(path, map_location=device)
     dis_loaded_state = {k.replace('module.', ''): v for k, v in checkpoint['netD_state_dict'].items()}
     netD.load_state_dict(dis_loaded_state)
@@ -85,7 +85,7 @@ def main():
     df_cm = pd.DataFrame(cf_matrix, index=[i for i in classes], columns=[i for i in classes])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True, fmt=".2g")
-    plt.savefig(os.path.join('./models', 'confusion_matrix_trained_sch1_attMap_final_test.png'))
+    plt.savefig(os.path.join('trained_models', 'confusion_matrix_trained_sch1_attMap_final_test.png'))
 
 
 

@@ -31,13 +31,13 @@ def main():
     print("Run the script on Device: ", device)
 
 
-    from train_module_1 import get_mobilenet
+    from train_CNN import get_mobilenet
     mobilenet = get_mobilenet().to(device)
     mobilenet2 = get_mobilenet().to(device)
     mobilenet3 = get_mobilenet().to(device)
-    path = 'models/mobilenet_v2.ckpt'
-    path2 = 'models/mobilenet_v4.ckpt'
-    path3 = 'models/mobilenet_v3.ckpt'
+    path = 'trained_models/mobilenet_v2.ckpt'
+    path2 = 'trained_models/mobilenet_v4.ckpt'
+    path3 = 'trained_models/mobilenet_v3.ckpt'
 
     checkpoint = torch.load(path, map_location=device)
     checkpoint2 = torch.load(path2, map_location=device)
@@ -114,8 +114,8 @@ def main():
     df_cm = pd.DataFrame(cf_matrix, index=[i for i in classes], columns=[i for i in classes])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True, fmt=".2g")
-    # plt.savefig(os.path.join('./models', 'confusion_matrix_ensemble_v2_v4.png'))
-    plt.savefig(os.path.join('./models', 'confusion_matrix_ensemble_v2_v4_depth_AND_final_test.png'))
+    # plt.savefig(os.path.join('./trained_models', 'confusion_matrix_ensemble_v2_v4.png'))
+    plt.savefig(os.path.join('trained_models', 'confusion_matrix_ensemble_v2_v4_depth_AND_final_test.png'))
 
 
 

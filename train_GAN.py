@@ -7,13 +7,13 @@ import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
 # from tensorboardX import SummaryWriter
-from model_attMap import Generator, Discriminator
+from model.model_attMap import Generator, Discriminator
 from dataloaders.data_5 import CsvDataset
 from torch.optim import lr_scheduler
 from utils import AverageMeter
 import torch.nn.functional as F
 
-MODEL_DIR = './models/'
+MODEL_DIR = 'trained_models/'
 
 def main():
     # Arguments

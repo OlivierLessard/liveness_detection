@@ -38,11 +38,11 @@ def main():
     print("Run the script on Device: ", device)
 
     #################
-    # model_effNet = models.efficientnet_b7(pretrained=False).to(device)
+    # model_effNet = trained_models.efficientnet_b7(pretrained=False).to(device)
     # model = Discriminator().to(device)
-    from train_module_1 import get_mobilenet
+    from train_CNN import get_mobilenet
     mobilenet = get_mobilenet().to(device)
-    path = 'models/mobilenet_v2.ckpt'
+    path = 'trained_models/mobilenet_v2.ckpt'
 
 
     checkpoint = torch.load(path, map_location=device)
@@ -133,7 +133,7 @@ def main():
     df_cm = pd.DataFrame(cf_matrix, index=[i for i in classes], columns=[i for i in classes])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True, fmt=".2g")
-    plt.savefig(os.path.join('./models', 'confusion_matrix_v2.png'))
+    plt.savefig(os.path.join('trained_models', 'confusion_matrix_v2.png'))
 
 
 
