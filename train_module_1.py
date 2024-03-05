@@ -1,5 +1,3 @@
-# from GPUtil import showUtilization as gpu_usage
-# gpu_usage()
 import argparse
 import os
 import torch
@@ -7,7 +5,6 @@ import csv
 import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
-# from tensorboardX import SummaryWriter
 from loss import ContrastiveLoss
 from dataloaders.data_7_EfficientNet import CsvDataset
 from torch.optim import lr_scheduler
@@ -25,6 +22,7 @@ def get_mobilenet():
     model.classifier[-1] = nn.Linear(1024, 2)
     return model
 
+
 def main():
     # Arguments
     parser = argparse.ArgumentParser(description='Check Quality of the Identity Card')
@@ -38,27 +36,21 @@ def main():
     args = parser.parse_args()
     best_acc = 0.0
     batch_size = args.bs
-    
-    train_csv_dir = './face_db/training' + '.csv'
 
     torch.cuda.empty_cache()
     is_use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if is_use_cuda else "cpu")
     print('--------- device:', device, args.gpu_index)
-    # torch.cuda.set_per_process_memory_fraction(1.0)
 
     # Create models
     mobilenet = get_mobilenet().to(device)
-    # model_effNet = EfficientNet.from_pretrained('efficientnet-b7')
-    # model_effNet = models.efficientnet_b7(pretrained=False).to(device)
-    # model = Discriminator().to(device)
     print('Model created.')
-    
+
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     # if torch.cuda.device_count() > 1:
     #     model = nn.DataParallel(model.to(device))
     #     model_effNet = nn.DataParallel(model_effNet.to(device))
-    
+
     print('model and cuda mixing done')
 
     # Training parameters
@@ -69,6 +61,7 @@ def main():
     # my_lr_scheduler_model_effNet = lr_scheduler.StepLR(optimizer_model_effNet, step_size=10, gamma=0.1)
 
     # Load data
+    train_csv_dir = './face_db/training' + '.csv'
     transform1 = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
     training_dataset = CsvDataset(csv_file=train_csv_dir, transform1=transform1, should_invert=False)
 

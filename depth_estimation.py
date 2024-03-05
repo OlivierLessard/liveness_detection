@@ -25,7 +25,8 @@ def compute_depth_variance(img):
 filenames = []
 labels = []
 
-root = '/home/elham/anti-spoofing/Evaluation/benchmarks/input_images'
+# root = '/home/elham/anti-spoofing/Evaluation/benchmarks/input_images'
+root = 'DATASET_VALIDATION/real'
 images = os.listdir(root)
 images = [x for x in images if '.db' not in x]
 for img in images:
@@ -63,12 +64,28 @@ for i in range(len(filenames)):
     with torch.no_grad():
         prediction = midas(input_batch)
 
+        array = prediction.numpy()
+        scaled_array = (array - array.min()) / (array.max() - array.min()) * 255
+        path = "depth/" + os.path.split(filename)[0]
+        np.savetxt(path + '/{}.txt'.format(os.path.split(filename)[1][:-4]), np.squeeze(scaled_array), fmt='%d')
+
         prediction = torch.nn.functional.interpolate(
             prediction.unsqueeze(1),
             size=img.shape[:2],
             mode="bicubic",
             align_corners=False,
         ).squeeze()
+
+        # plt.figure()
+        # array = prediction.numpy()
+        # scaled_array = (array - array.min()) / (array.max() - array.min()) * 255
+        # plt.imshow(scaled_array)
+        # plt.savefig("depth/" + filename)
+        # plt.show(block=True)
+        # plt.close()
+
+
+
 
     output = prediction.cpu().numpy()
 
