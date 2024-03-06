@@ -55,7 +55,7 @@ def main():
     # confusion matrix
     from torchvision.datasets import ImageFolder
     test_set = ImageFolder(root='DATASET_VALIDATION', transform=transform1)
-    # test_set = ImageFolder(root='face_db/testing', transform=transform1)
+    # test_set = ImageFolder(root='face_db/validation', transform=transform1)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
     y_true = []
     y_pred = []

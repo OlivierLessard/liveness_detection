@@ -9,8 +9,8 @@ for type in ID_type:
         dir = '../face_db/training/'
         csv_dir = './face_db/training'  + '.csv'
     else:
-        dir = '../face_db/testing/'
-        csv_dir = './face_db/testing' + '.csv'
+        dir = '../face_db/validation/'
+        csv_dir = './face_db/validation' + '.csv'
 
     training_dataset = dataset.ImageFolder(root=dir)
     print('hi', len(training_dataset))
