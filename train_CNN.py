@@ -23,7 +23,18 @@ def get_mobilenet():
     return model
 
 
-def get_mobilenet_generator():
+def get_densenet():
+    """
+    Load the model. Define the architecture to use in the config.py file.
+
+    :return: the model
+    """
+    from model.gan_model import Generator
+    model = Generator()
+    return model
+
+
+def get_mobilenet_feature_generator():
     """
     Load the model. Define the architecture to use in the config.py file.
 
@@ -38,7 +49,7 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser(description='Check Quality of the Identity Card')
     parser.add_argument('--root', type=int, help='set the root of dataset')
-    parser.add_argument('--epochs', default=2, type=int, help='number of total epochs to run')
+    parser.add_argument('--epochs', default=60, type=int, help='number of total epochs to run')
     parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--bs', default=4, type=int, help='batch size')
     parser.add_argument('--gpu_index', type=int, default=0, help='Index of the GPU device to use')
@@ -58,12 +69,13 @@ def main():
     dataset_sizes, train_loader = get_pair_training_dataloader(batch_size)
 
     # model
-    # mobilenet = get_mobilenet().to(device)
-    mobilenet = get_mobilenet_generator().to(device)
+    # model = get_mobilenet().to(device)
+    model = get_densenet().to(device)
+    # model = get_mobilenet_feature_generator().to(device)
     print('Model created.')
 
     # Training parameters
-    optimizer = torch.optim.Adam(mobilenet.parameters(), args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), args.lr)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     # Loss
@@ -82,7 +94,7 @@ def main():
         print('-' * 10)
 
         # Switch to train mode
-        mobilenet.train()
+        model.train()
 
         total_batch_loss = 0.0
         get_corrects = 0.0
@@ -96,8 +108,8 @@ def main():
             image_1, image_2, label_1, label_2 = data
             image_1, image_2, label_1, label_2 = image_1.to(device), image_2.to(device), label_1.to(device), label_2.to(device)
 
-            predicted_probabilities_1, scores_1 = mobilenet(image_1)
-            predicted_probabilities_2, scores_2 = mobilenet(image_2)
+            predicted_probabilities_1, scores_1 = model(image_1)
+            predicted_probabilities_2, scores_2 = model(image_2)
             correct_predictions_1 = (predicted_probabilities_1.argmax(1) == label_1).type(torch.float)
             correct_predictions_2 = (predicted_probabilities_2.argmax(1) == label_2).type(torch.float)
             get_corrects += torch.sum(torch.logical_and(correct_predictions_2, correct_predictions_1))
@@ -127,12 +139,12 @@ def main():
         if not os.path.isdir('trained_models_for_competition'):
             os.makedirs('trained_models_for_competition')
         if variable_acc > best_acc:
-            best_acc = save_model(best_acc, mobilenet, variable_acc)
+            best_acc = save_model(best_acc, model, variable_acc)
 
         # save the losses avg in .csv file
         if not os.path.isdir('loss'):
             os.makedirs('loss')
-        with open('./loss/' + "loss_mobilenet_v4.csv", 'a') as file:
+        with open('./loss/' + "loss_densenet121_baseline.csv", 'a') as file:
             writer = csv.writer(file)
             writer.writerow([epoch, losses.avg, variable_acc])
            
@@ -149,7 +161,7 @@ def save_model(best_acc, mobilenet, variable_acc):
     torch.save({
         'model_state_dict': mobilenet.state_dict(),
         'model3D_state_dict': mobilenet.state_dict()},
-        dir + '/mobilenet.ckpt')
+        dir + '/densenet121_baseline.ckpt')
     return best_acc
 
 

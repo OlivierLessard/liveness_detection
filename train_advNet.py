@@ -22,13 +22,35 @@ from torch.optim import lr_scheduler
 from utils import AverageMeter
 
 
+def get_pair_training_dataloader(batch_size):
+    train_csv_dir = './face_db/training' + '.csv'
+    # transform1 = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
+    transform1 = transforms.Compose([transforms.Resize((240, 240)), transforms.Grayscale(), transforms.ToTensor()])
+    training_dataset = CsvDataset(csv_file=train_csv_dir, transform1=transform1, should_invert=False)
+    train_loader = DataLoader(training_dataset, shuffle=True, num_workers=0,
+                              batch_size=batch_size, pin_memory=True)  # num_workers=4 * torch.cuda.device_count()
+    dataset_sizes = len(train_loader.dataset)
+    return dataset_sizes, train_loader
+
+
+def get_pair_validation_dataloader(batch_size):
+    train_csv_dir = './face_db/validation' + '.csv'
+    # transform1 = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
+    transform1 = transforms.Compose([transforms.Resize((240, 240)), transforms.Grayscale(), transforms.ToTensor()])
+    training_dataset = CsvDataset(csv_file=train_csv_dir, transform1=transform1, should_invert=False)
+    train_loader = DataLoader(training_dataset, shuffle=True, num_workers=0,
+                              batch_size=batch_size, pin_memory=True)  # num_workers=4 * torch.cuda.device_count()
+    dataset_sizes = len(train_loader.dataset)
+    return dataset_sizes, train_loader
+
+
 def main():
     # Arguments
     parser = argparse.ArgumentParser(description='Fraud Detection in Identity Card')
     parser.add_argument('--root', type=int, help='set the root of dataset')
-    parser.add_argument('--epochs', default=100, type=int, help='number of total epochs to run')
+    parser.add_argument('--epochs', default=60, type=int, help='number of total epochs to run')
     parser.add_argument('--lr', '--learning-rate', default=5e-5, type=float, help='initial learning rate')  # default=0.00001
-    parser.add_argument('--bs', default=2, type=int, help='batch size')
+    parser.add_argument('--bs', default=2, type=int, help='batch size')  # 3 gives OOM
     parser.add_argument('--beta1', default=0.5, type=float, help='hyperparam for Adam optimizers')
 
     args = parser.parse_args()
@@ -48,7 +70,7 @@ def main():
     # print(netD)
 
     # Create the Generator
-    from train_CNN import get_mobilenet_generator
+    from train_CNN import get_mobilenet_feature_generator
     # netG = get_mobilenet_generator().to(device)
     netG = Generator().to(device)
     print('Generator Model created.')
@@ -56,7 +78,6 @@ def main():
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         netG = nn.DataParallel(netG.to(device))
     # print(netG)
-   
 
     print('model and cuda mixing done')
 
@@ -71,9 +92,9 @@ def main():
     batch_size = args.bs
 
     # Load data
-    from train_CNN import get_pair_training_dataloader
-    dataset_sizes, train_loader = get_pair_training_dataloader(batch_size)
-    print(dataset_sizes)
+    train_dataset_sizes, train_loader = get_pair_training_dataloader(batch_size)
+    val_dataset_sizes, val_loader = get_pair_validation_dataloader(batch_size)
+    print(train_dataset_sizes)
     print("Total number of batches in train loader are :", len(train_loader))
 
 
@@ -104,28 +125,20 @@ def main():
         # model.train()
         G_losses = []
         D_losses = []
-        get_corrects = 0.0
+        train_corrects = 0.0
+        val_corrects = 0.0
 
         for i, data in enumerate(train_loader):
 
             netD.train()
             netG.train()
-            gen_loss = 0
-            dis_loss = 0
-            # with torch.enable_grad():   
 
-           # Prepare sample and target
+            # Prepare sample and target
             img1, img2, label_1, label_2 = data
-            img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device) 
-            label_pair = label_1[:] == label_2[:]  # label of pairs: 1 if the two images in the pair are
-            # of the same class, 0 if the images belong to two different classes
-            label_pair = label_pair.long()
+            img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device)
             
-            _, x_mask_1, mask_1 = netG(img1)
-            _, x_mask_2, mask_2 = netG(img2)
-            # latent_1 = netG(img1)
-            # latent_2 = netG(img2)
-
+            latent_1, x_mask_1, mask_1 = netG(img1)
+            latent_2, x_mask_2, mask_2 = netG(img2)
 
             ############################
             # Calculate the contrastive loss
@@ -138,10 +151,9 @@ def main():
             # Calculate loss on all-real batch
             # netD.zero_grad()
             optimizerD.zero_grad()
-            real_vid_feat, y1o_softmax  = netD(x_mask_1)
+            real_vid_feat, y1o_softmax = netD(x_mask_1)
             # h = torch.max(y1o_softmax, 1)[1]
             dis_real_loss = loss_cross(real_vid_feat, d_label_real_img)
-            # dis_real_loss = adversarial_loss(real_vid_feat, d_label_real_img)
             dis_real_loss.backward(retain_graph=True)
 
 
@@ -165,9 +177,12 @@ def main():
             optimizerG.zero_grad()
            
             gen_fake_feat, y2o_softmax_fake = netD(x_mask_2)
+            gen_real_feat, y1o_softmax_real = netD(x_mask_1)
             gen_fake_loss = loss_cross(gen_fake_feat, d_label_real_img)
-          
-            gen_loss = gen_fake_loss
+            gen_real_loss = loss_cross(gen_real_feat, d_label_fake_img)
+
+            # gen_loss = gen_fake_loss
+            gen_loss = (gen_fake_loss + gen_real_loss)/2
             # gen_loss =  (gen_fake_loss + loss_image_total_2)/2
             G_losses.append(gen_loss.item())
             # gen_loss_total = gen_loss +  loss_image_total_1 + loss_image_total_2
@@ -176,43 +191,54 @@ def main():
             # Update G
             optimizerG.step()
             
-            get_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1, torch.max(y2o_softmax, 1)[1] == label_2))
-            # print('get_corrects', get_corrects)
+            train_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1, torch.max(y2o_softmax, 1)[1] == label_2))
 
             # print('loss_total---',  dis_loss, gen_loss)
 
-        variable_acc = get_corrects.item() / dataset_sizes
+        for i, data in enumerate(val_loader):
+            netD.eval()
+            netG.eval()
 
-        # print('Epoch: [{:.4f}] \t The loss of this epoch is: {:.4f} \t The accuracy of this epoch is: {:.4f} '.format(epoch, losses.avg, variable_acc))
-        print('Epoch: [{:.4f}] \t The dis_loss of this epoch is: {:.4f} \t The gen_loss of this epoch is: {:.4f}\t The accuracy of this epoch is: {:.4f} '.format(epoch, statistics.mean(D_losses), statistics.mean(G_losses), variable_acc))
-        
+            # Prepare sample and target
+            img1, img2, label_1, label_2 = data
+            img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device)
 
-        if not os.path.isdir('./trained_models_for_paper' ):
+            # inference
+            _, x_mask_1, mask_1 = netG(img1)
+            _, x_mask_2, mask_2 = netG(img2)
+            real_vid_feat, y1o_softmax = netD(x_mask_1)
+            fake_vid_feat, y2o_softmax = netD(x_mask_2.detach())
+
+            val_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1,
+                                                        torch.max(y2o_softmax, 1)[1] == label_2))
+
+        train_accuracy = train_accuracy.item() / train_dataset_sizes
+        val_accuracy = val_corrects.item() / val_dataset_sizes
+        print('Epoch: [{:.4f}] \t The dis_loss of this epoch is: {:.4f} \t The gen_loss of this epoch is: {:.4f}\t Train accuracy is: {:.4f} Val accuracy is: {:.4f} '.format(epoch, statistics.mean(D_losses), statistics.mean(G_losses), train_accuracy, val_accuracy))
+
+        if not os.path.isdir('./trained_models_for_paper'):
             os.makedirs('./trained_models_for_paper')
-        if variable_acc > best_acc:
+        if val_accuracy > best_acc:
             print("Here the training accuracy got reduced, hence printing")
-            print('Current best epoch accuracy is {:.4f}'.format(variable_acc), 'previous best was {}'.format(best_acc))
-            best_acc = variable_acc
+            print('Current best epoch val accuracy is {:.4f}'.format(val_accuracy), 'previous best was {}'.format(best_acc))
+            best_acc = val_accuracy
             dir = 'trained_models_for_paper'
             if not os.path.isdir(dir):
                 os.makedirs(dir)
             torch.save({
                 'model_G_state_dict': netG.state_dict(),
                 'model_D_state_dict': netD.state_dict()},
-                dir + '/net_G_D.ckpt')
-            
+                dir + '/net_G_D_with_real.ckpt')
 
         # save the losses avg in .csv file
         if not os.path.isdir('loss'):
             os.makedirs('loss')
-        with open('./loss/' + "loss_G_D.csv", 'a') as file:
+        with open('./loss/' + "loss_G_D_with_real.csv", 'a') as file:
             writer = csv.writer(file)
-            writer.writerow([epoch, losses.avg, variable_acc])
-        
-       
+            writer.writerow([epoch, losses.avg, train_accuracy, val_accuracy])
+
         D_lr_scheduler.step()
         G_lr_scheduler.step()
-
 
 
 if __name__ == '__main__':
