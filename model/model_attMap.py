@@ -4,7 +4,7 @@ from torchvision import models
 import torch.nn.functional as F
 
 
-# the only difference of this code with the one in "model.py" is that here the final ouput has 3 channels
+# the only difference of this code with the one in "gan_model.py" is that here the final ouput has 3 channels
 
 
 class UpSample(nn.Sequential):

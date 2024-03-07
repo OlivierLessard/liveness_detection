@@ -13,7 +13,7 @@ from torch.optim import lr_scheduler
 from utils import AverageMeter
 import torch.nn.functional as F
 
-MODEL_DIR = 'trained_models/'
+MODEL_DIR = 'trained_models_for_competition/'
 
 def main():
     # Arguments
@@ -170,7 +170,7 @@ def main():
         #     writer = csv.writer(file)
         #     writer.writerow([epoch, statistics.mean(D_losses), statistics.mean(G_losses), variable_acc])
 
-        with open("loss_1/loss_sch1_attMap.csv", 'a') as file:
+        with open("loss_competition/loss_sch1_attMap.csv", 'a') as file:
             writer = csv.writer(file)
             writer.writerow([epoch, statistics.mean(D_losses), variable_acc])
         
