@@ -95,42 +95,23 @@ def main():
     print(train_dataset_sizes)
     print("Total number of batches in train loader are :", len(train_loader))
 
-
     # Loss
     criterion_contrastive = ContrastiveLoss()
-    # l1_criterion = nn.L1Loss()
     loss_cross = torch.nn.CrossEntropyLoss()
-    # bce_with_logits_loss = nn.BCEWithLogitsLoss().to(device)
-    adversarial_loss = AdversarialLoss()
-    adversarial_loss = adversarial_loss.to(device)
-
-    real_imag_label = 1
-    fake_imag_label = 0
     d_label_real_img = torch.cuda.LongTensor([1]*batch_size)
     d_label_fake_img = torch.cuda.LongTensor([0]*batch_size)
 
     # Start training...
     for epoch in range(args.epochs):
-        # torch.cuda.empty_cache()
-
-        losses = AverageMeter()
-        N = len(train_loader)
-
         print('Epoch {}/{}'.format(epoch, args.epochs - 1))
         print('-' * 10)
 
-        # Switch to train mode
-        # model.train()
-        G_losses = []
-        D_losses = []
-        train_corrects = 0.0
-        val_corrects = 0.0
+        G_losses, D_losses = [], []
+        train_corrects, val_corrects = 0.0, 0.0
 
+        netD.train()
+        netG.train()
         for i, data in enumerate(train_loader):
-
-            netD.train()
-            netG.train()
-
             # Prepare sample and target
             img1, img2, label_1, label_2 = data
             img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device)
@@ -185,9 +166,9 @@ def main():
 
             # print('loss_total---',  dis_loss, gen_loss)
 
+        netD.eval()
+        netG.eval()
         for i, data in enumerate(val_loader):
-            netD.eval()
-            netG.eval()
 
             # Prepare sample and target
             img1, img2, label_1, label_2 = data
@@ -199,8 +180,8 @@ def main():
             real_vid_feat, y1o_softmax = netD(x_mask_1)
             fake_vid_feat, y2o_softmax = netD(x_mask_2.detach())
 
-            val_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1,
-                                                        torch.max(y2o_softmax, 1)[1] == label_2))
+            val_corrects += torch.max(y1o_softmax, 1)[1] == label_1
+            val_corrects += torch.max(y2o_softmax, 1)[1] == label_2
 
         train_accuracy = train_corrects.item() / train_dataset_sizes
         val_accuracy = val_corrects.item() / val_dataset_sizes
@@ -225,7 +206,7 @@ def main():
             os.makedirs('loss')
         with open('./loss/' + "scheme4_loss_G_D_with_real_and_contrastive.csv", 'a') as file:
             writer = csv.writer(file)
-            writer.writerow([epoch, losses.avg, train_accuracy, val_accuracy])
+            writer.writerow([epoch, statistics.mean(D_losses),  statistics.mean(G_losses), train_accuracy, val_accuracy])
 
         D_lr_scheduler.step()
         G_lr_scheduler.step()
