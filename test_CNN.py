@@ -40,7 +40,7 @@ def main():
     #################
     # model_effNet = trained_models_for_competition.efficientnet_b7(pretrained=False).to(device)
     # model = Discriminator().to(device)
-    from train_CNN import get_mobilenet
+    from train_baseline_1 import get_mobilenet
     mobilenet = get_mobilenet().to(device)
     path = 'trained_models_for_competition/mobilenet_v2.ckpt'
 

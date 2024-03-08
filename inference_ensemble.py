@@ -31,7 +31,7 @@ def main():
     print("Run the script on Device: ", device)
 
 
-    from train_CNN import get_mobilenet
+    from train_baseline_1 import get_mobilenet
     mobilenet = get_mobilenet().to(device)
     mobilenet2 = get_mobilenet().to(device)
     mobilenet3 = get_mobilenet().to(device)

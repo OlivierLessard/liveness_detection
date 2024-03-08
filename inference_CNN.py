@@ -29,7 +29,7 @@ def main():
     print("Run the script on Device: ", device)
 
 
-    from train_CNN import get_mobilenet
+    from train_baseline_1 import get_mobilenet
     mobilenet = get_mobilenet().to(device)
     path = 'trained_models_for_competition/mobilenet_v2.ckpt'
 

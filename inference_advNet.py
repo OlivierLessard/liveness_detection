@@ -33,7 +33,7 @@ def main():
     print("Run the script on Device: ", device)
     netG = Generator().to(device)
     netD = Discriminator().to(device)
-    path = 'trained_models_for_paper/net_G_D.ckpt'
+    path = 'trained_models_for_paper/net_G_D_with_real.ckpt'
     checkpoint = torch.load(path, map_location=device)
     netG_state = {k.replace('module.', ''): v for k, v in checkpoint['model_G_state_dict'].items()}
     netD_state = {k.replace('module.', ''): v for k, v in checkpoint['model_D_state_dict'].items()}

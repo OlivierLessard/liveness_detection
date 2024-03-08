@@ -144,7 +144,7 @@ def main():
         # save the losses avg in .csv file
         if not os.path.isdir('loss'):
             os.makedirs('loss')
-        with open('./loss/' + "loss_densenet121_baseline.csv", 'a') as file:
+        with open('./loss/' + "scheme1_loss_densenet121_baseline.csv", 'a') as file:
             writer = csv.writer(file)
             writer.writerow([epoch, losses.avg, variable_acc])
            
@@ -161,7 +161,7 @@ def save_model(best_acc, mobilenet, variable_acc):
     torch.save({
         'model_state_dict': mobilenet.state_dict(),
         'model3D_state_dict': mobilenet.state_dict()},
-        dir + '/densenet121_baseline.ckpt')
+        dir + '/scheme1_densenet121_baseline.ckpt')
     return best_acc
 
 

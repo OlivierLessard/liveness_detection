@@ -50,12 +50,10 @@ def main():
     parser.add_argument('--root', type=int, help='set the root of dataset')
     parser.add_argument('--epochs', default=60, type=int, help='number of total epochs to run')
     parser.add_argument('--lr', '--learning-rate', default=5e-5, type=float, help='initial learning rate')  # default=0.00001
-    parser.add_argument('--bs', default=2, type=int, help='batch size')  # 3 gives OOM
+    parser.add_argument('--bs', default=1, type=int, help='batch size')  # 3 gives OOM
     parser.add_argument('--beta1', default=0.5, type=float, help='hyperparam for Adam optimizers')
 
     args = parser.parse_args()
-
-    train_csv_dir = 'face_db/training.csv'
 
     is_use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if is_use_cuda else "cpu")
@@ -67,11 +65,8 @@ def main():
     if (device.type == 'cuda') and (ngpu > 1):
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         netD = nn.DataParallel(netD.to(device))
-    # print(netD)
 
     # Create the Generator
-    from train_CNN import get_mobilenet_feature_generator
-    # netG = get_mobilenet_generator().to(device)
     netG = Generator().to(device)
     print('Generator Model created.')
     if (device.type == 'cuda') and (ngpu > 1):
@@ -100,9 +95,9 @@ def main():
 
     # Loss
     criterion_contrastive = ContrastiveLoss()
-    l1_criterion = nn.L1Loss()
+    # l1_criterion = nn.L1Loss()
     loss_cross = torch.nn.CrossEntropyLoss()
-    bce_with_logits_loss = nn.BCEWithLogitsLoss().to(device)
+    # bce_with_logits_loss = nn.BCEWithLogitsLoss().to(device)
     adversarial_loss = AdversarialLoss()
     adversarial_loss = adversarial_loss.to(device)
 
@@ -143,7 +138,9 @@ def main():
             ############################
             # Calculate the contrastive loss
             ############################
-            # contrastive_loss_densNet = criterion_contrastive(latent_1, latent_2, label_pair)
+            label_pair = label_1[:] == label_2[:]
+            label_pair = label_pair.long()
+            contrastive_loss_densNet = criterion_contrastive(latent_1, latent_2, label_pair)
           
             ############################
             # (1) Update D network: maximize log(D(x)))     # discriminator adversarial loss
@@ -177,18 +174,12 @@ def main():
             optimizerG.zero_grad()
            
             gen_fake_feat, y2o_softmax_fake = netD(x_mask_2)
-            gen_real_feat, y1o_softmax_real = netD(x_mask_1)
             gen_fake_loss = loss_cross(gen_fake_feat, d_label_real_img)
-            gen_real_loss = loss_cross(gen_real_feat, d_label_fake_img)
-
-            # gen_loss = gen_fake_loss
-            gen_loss = (gen_fake_loss + gen_real_loss)/2
-            # gen_loss =  (gen_fake_loss + loss_image_total_2)/2
+            gen_loss = (gen_fake_loss + contrastive_loss_densNet)/2
             G_losses.append(gen_loss.item())
-            # gen_loss_total = gen_loss +  loss_image_total_1 + loss_image_total_2
-            # loss_total = contrastive_loss_densNet + loss_image_total_1 + loss_image_total_2            
-            gen_loss.backward()
+
             # Update G
+            gen_loss.backward()
             optimizerG.step()
             
             train_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1, torch.max(y2o_softmax, 1)[1] == label_2))
@@ -212,7 +203,7 @@ def main():
             val_corrects += torch.sum(torch.logical_and(torch.max(y1o_softmax, 1)[1] == label_1,
                                                         torch.max(y2o_softmax, 1)[1] == label_2))
 
-        train_accuracy = train_accuracy.item() / train_dataset_sizes
+        train_accuracy = train_corrects.item() / train_dataset_sizes
         val_accuracy = val_corrects.item() / val_dataset_sizes
         print('Epoch: [{:.4f}] \t The dis_loss of this epoch is: {:.4f} \t The gen_loss of this epoch is: {:.4f}\t Train accuracy is: {:.4f} Val accuracy is: {:.4f} '.format(epoch, statistics.mean(D_losses), statistics.mean(G_losses), train_accuracy, val_accuracy))
 
@@ -228,12 +219,12 @@ def main():
             torch.save({
                 'model_G_state_dict': netG.state_dict(),
                 'model_D_state_dict': netD.state_dict()},
-                dir + '/net_G_D_with_real.ckpt')
+                dir + '/scheme3_net_G_D_and_contrastive.ckpt')
 
         # save the losses avg in .csv file
         if not os.path.isdir('loss'):
             os.makedirs('loss')
-        with open('./loss/' + "loss_G_D_with_real.csv", 'a') as file:
+        with open('./loss/' + "scheme3_loss_G_D_and_contrastive.csv", 'a') as file:
             writer = csv.writer(file)
             writer.writerow([epoch, losses.avg, train_accuracy, val_accuracy])
 
