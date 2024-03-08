@@ -55,7 +55,7 @@ class Generator(nn.Module):
         x_latent = encoder_op_1[-1]  # encoder_op_1[-4]
         mask = self.map(x_latent)  # layer 9
         x_mask = x_latent * mask
-        return x_latent, x_mask, mask
+        return x_latent, x_mask, mask, encoder_op_1
 
 
 class Discriminator(nn.Module):

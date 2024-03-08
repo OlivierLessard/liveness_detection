@@ -116,8 +116,8 @@ def main():
             img1, img2, label_1, label_2 = data
             img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device)
             
-            latent_1, x_mask_1, mask_1 = netG(img1)
-            latent_2, x_mask_2, mask_2 = netG(img2)
+            latent_1, x_mask_1, mask_1, encoder_op_1 = netG(img1)
+            latent_2, x_mask_2, mask_2, encoder_op_2 = netG(img2)
 
             ############################
             # Calculate the contrastive loss
@@ -175,8 +175,8 @@ def main():
             img1, img2, label_1, label_2 = img1.to(device), img2.to(device), label_1.to(device), label_2.to(device)
 
             # inference
-            _, x_mask_1, mask_1 = netG(img1)
-            _, x_mask_2, mask_2 = netG(img2)
+            _, x_mask_1, mask_1, encoder_op_1 = netG(img1)
+            _, x_mask_2, mask_2, encoder_op_2 = netG(img2)
             real_vid_feat, y1o_softmax = netD(x_mask_1)
             fake_vid_feat, y2o_softmax = netD(x_mask_2.detach())
 

@@ -52,7 +52,7 @@ def main():
         img1, label_image_1 = img1.to(device), label_image_1.to(device)
 
         # inference
-        _, x_mask_1, mask_1 = netG(img1)
+        _, x_mask_1, mask_1, encoder_op_1 = netG(img1)
         features, y_softmax = netD(x_mask_1)
         pred = torch.max(y_softmax, 1)[1].item()  # v2
 

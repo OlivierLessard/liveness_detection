@@ -21,26 +21,23 @@ def main():
     args = parser.parse_args()
     batch_size = args.bs
 
-    # Load data
-    transform1 = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
-
     is_use_cuda = torch.cuda.is_available()
     device = torch.device("cpu")
     print("Run the script on Device: ", device)
 
-
-    from train_baseline_1 import get_mobilenet
-    mobilenet = get_mobilenet().to(device)
-    path = 'trained_models_for_competition/mobilenet_v2.ckpt'
+    from train_baseline_1 import get_densenet
+    model = get_densenet().to(device)
+    path = 'trained_models_for_paper/scheme1_densenet121_baseline.ckpt'
 
     checkpoint = torch.load(path, map_location=device)
     model_loaded_state = {k.replace('module.', ''): v for k, v in checkpoint['model_state_dict'].items()}
-    mobilenet.load_state_dict(model_loaded_state)
-    mobilenet.eval()
+    model.load_state_dict(model_loaded_state)
+    model.eval()
 
-    # confusion matrix
+    # Load data
     from torchvision.datasets import ImageFolder
-    test_set = ImageFolder(root='DATASET_VALIDATION', transform=transform1)
+    transform1 = transforms.Compose([transforms.Resize((240, 240)), transforms.ToTensor()])
+    test_set = ImageFolder(root='face_db/testing', transform=transform1)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
     y_true = []
     y_pred = []
@@ -51,7 +48,7 @@ def main():
         img1, label_image_1 = data  # label_0 is the label of image_0 and label_1 is for image_1
         img1, label_image_1 = img1.to(device), label_image_1.to(device)
 
-        y1o_softmax = mobilenet(img1)
+        y1o_softmax = model(img1)
 
         y_true.extend([label_image_1.item()])
         y_pred.extend([torch.max(y1o_softmax, 1)[1].item()])
@@ -81,7 +78,7 @@ def main():
     df_cm = pd.DataFrame(cf_matrix, index=[i for i in classes], columns=[i for i in classes])
     plt.figure(figsize=(12, 7))
     sn.heatmap(df_cm, annot=True, fmt=".2g")
-    plt.savefig(os.path.join('trained_models_for_competition', 'confusion_matrix_v2_final_test.png'))
+    plt.savefig(os.path.join('trained_models_for_competition', 'confusion_matrix_scheme1_densenet121_baseline.png'))
 
 
 
