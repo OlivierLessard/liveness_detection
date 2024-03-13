@@ -20,7 +20,6 @@ from model.model_attMap import Decoder
 from loss import ContrastiveLoss, ssim, AdversarialLoss
 from dataloaders.data_5 import SiameseNetworkDataset, CsvDataset, CsvDataset_half
 from torch.optim import lr_scheduler
-from utils import AverageMeter
 
 
 def get_pair_training_dataloader(batch_size):
@@ -106,8 +105,8 @@ def main():
     criterion_contrastive = ContrastiveLoss()
     loss_cross = torch.nn.CrossEntropyLoss()
     l1_criterion = nn.L1Loss()
-    d_label_real_img = torch.cuda.LongTensor([1]*batch_size)
-    d_label_fake_img = torch.cuda.LongTensor([0]*batch_size)
+    d_label_real_img = torch.LongTensor([1]*batch_size).to(device)
+    d_label_fake_img = torch.LongTensor([0]*batch_size).to(device)
 
     # Start training...
     for epoch in range(args.epochs):
