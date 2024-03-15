@@ -41,6 +41,21 @@ def get_densenet():
     return model
 
 
+def get_vit():
+    """
+    Load the model. Define the architecture to use in the config.py file.
+
+    :return: the model
+    """
+    model = models.vit_b_16(pretrained=False, num_classes=2, image_size=240)
+
+    # Freeze all the parameters in the pre-trained model
+    for param in model.parameters():
+        param.requires_grad = True
+
+    return model
+
+
 def get_mobilenet_feature_generator():
     """
     Load the model. Define the architecture to use in the config.py file.
@@ -78,7 +93,11 @@ def main():
     print("Total number of batches in train loader are :", len(train_loader))
 
     # model
-    model = get_densenet().to(device)
+    architecture = 'vit'
+    if architecture == 'densenet':
+        model = get_densenet().to(device)
+    else:
+        model = get_vit().to(device)
     print('Model created.')
 
     # Training parameters
